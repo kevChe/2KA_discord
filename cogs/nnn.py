@@ -14,7 +14,7 @@ class NNN(commands.Cog):
     CHANNEL = 1036206588899381329
     YES = '<:peko_carrot:1035123960083402833>'
     NO = '<:peko_cool:1036561247237324851>'
-    messages = [1036671342361190410, 1037033275899781230, 1037397736686882846]
+    messages = [1036671342361190410, 1037033275899781230, 1037397736686882846, 1037758428984123452, 1038120439253303307]
     
     #########################
     ##########TEST###########
@@ -30,6 +30,7 @@ class NNN(commands.Cog):
         self.bot = bot
         self.connection = pymysql.connect(host="db-buf-02.sparkedhost.us",autocommit=True ,port=3306, user="u75662_RNokPhakPC", passwd="v4RL73jqIfS^1lkMc@mZrZkE", db="s75662_NNN")
         self.cursor = self.connection.cursor()
+        self.day = datetime.datetime.now().strftime("%d")
 
         self.message = 0
 
@@ -37,6 +38,7 @@ class NNN(commands.Cog):
     async def on_ready(self):
         print('NNN')
         self.nnn.start()
+        self.update.start()
 
     @tasks.loop(hours=24.0)
     async def nnn(self):
@@ -45,10 +47,9 @@ class NNN(commands.Cog):
         #     await self.message.delete()
         # if datetime.datetime.now().hour == 0:
         # print(self.seconds_until_midnight())
-        #await asyncio.sleep(self.seconds_until_midnight())
+        await asyncio.sleep(self.seconds_until_midnight())
         channel = self.bot.get_channel(self.CHANNEL)
-        day = datetime.datetime.now().strftime("%d")
-        message = await channel.send(f'@NNN參與者 你今天（11月{int(day) + 1}日）尻了嗎？')
+        message = await channel.send(f'<@&1028510369917960202> 你今天（11月{int(self.day) + 1}日）尻了嗎？')
         self.messages.append(message.id)
         #print(self.messages)
         await message.add_reaction(self.YES)
@@ -97,8 +98,28 @@ class NNN(commands.Cog):
         diff = (target - now).total_seconds()
         if diff < 0:
     	    diff += 86400
-        print(f"{target} - {now} = {diff}")
+        print(f'{target} - {now} = {diff}')
         return diff
+
+    def dead(self):
+        sql = ""
+        for i in range(int(self.day)):
+            if i + 1 == int(self.day):
+                sql += f'November{i + 1:02d} = 1' 
+            else:
+                sql += f'November{i + 1:02d} = 1 OR '
+        print(f'DEAD SQL {sql}')
+        return (self.cursor.execute(f'SELECT * FROM NNN WHERE {sql}'))
+
+    def alive(self):
+        sql = ""
+        for i in range(int(self.day) - 1):
+            if i + 1 == int(self.day) - 1:
+                sql += f'November{i + 1:02d} = 0' 
+            else:
+                sql += f'November{i + 1:02d} = 0 AND '
+        print(f'ALIVE SQL {sql}')
+        return (self.cursor.execute(f'SELECT * FROM NNN WHERE {sql}'))
     
     @commands.command()
     async def get_name(self, ctx):
@@ -111,6 +132,16 @@ class NNN(commands.Cog):
             for reaction in message.reactions:
                 for user in reaction.users():
                     await user.add_roles(role)
+
+    @tasks.loop(hours=1.0)
+    async def update(self):
+        dead_channel = self.bot.get_channel(1037348849993388093)
+        alive_channel = self.bot.get_channel(1037350849590079519)
+        dead = self.dead()
+        alive = self.alive()
+        print(f'DEAD: {dead}  ALIVE: {alive}')
+        await dead_channel.edit(name = f'nnn破戒人數：{dead}')
+        await alive_channel.edit(name = f'nnn生存人數：{alive}')
 
 
 async def setup(bot):
